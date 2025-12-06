@@ -109,9 +109,12 @@ const PurchaseModal = ({ movie, isOpen, onClose, onSuccess }) => {
 
     setCheckingStatus(true);
     setError('');
-    setStatusMessage('Checking payment status...');
+    setStatusMessage('Checking payment status... (Please wait at least 15 seconds after confirming on your phone)');
 
     try {
+      // Wait a moment before checking to give gateway time to process
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
       const statusResult = await checkTransactionStatus(transactionId);
       const paymentStatus = (statusResult.paymentStatus || '').toUpperCase();
 
@@ -154,16 +157,16 @@ const PurchaseModal = ({ movie, isOpen, onClose, onSuccess }) => {
         setError('Payment was cancelled or failed. Please try again.');
         setStep('payment');
       } else if (paymentStatus === 'PENDING') {
-        setStatusMessage('Payment is still pending. Please approve the request on your phone and check again.');
+        setStatusMessage('Payment is still pending. If you just confirmed, please wait 15 seconds for the gateway to process, then check again.');
         setError('');
       } else {
-        setStatusMessage(`Payment status: ${paymentStatus}. If you've approved the payment, please wait a moment and check again.`);
+        setStatusMessage(`Payment status: ${paymentStatus}. If you've approved the payment, please wait 15 seconds for the gateway to process, then check again.`);
         setError('');
       }
     } catch (err) {
       console.error('Manual status check error:', err);
       setError(err.message || 'Failed to check payment status. Please try again.');
-      setStatusMessage('');
+      setStatusMessage('If you just confirmed the payment, please wait 15 seconds and try again.');
     } finally {
       setCheckingStatus(false);
     }
@@ -372,7 +375,7 @@ const PurchaseModal = ({ movie, isOpen, onClose, onSuccess }) => {
               >
                 {checkingStatus ? 'Checking...' : 'Check Payment Status'}
               </button>
-              <p className="check-hint">If you've approved the payment, click to check status</p>
+              <p className="check-hint">If you've approved the payment, wait 15 seconds for the gateway to process, then click to check status</p>
             </div>
 
             {timeRemaining <= 0 && (

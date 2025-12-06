@@ -6,9 +6,10 @@
 const FASTLIPA_API_BASE_URL = 'https://api.fastlipa.com/api';
 const FASTLIPA_API_TOKEN = 'FastLipa_JRyIKYbzS9ZdCQRN3cUtEQ';
 const PAYMENT_TIMEOUT = 2 * 60 * 1000; // 2 minutes in milliseconds
-const POLL_INTERVAL_INITIAL = 2000; // Poll every 2 seconds initially (faster)
-const POLL_INTERVAL_NORMAL = 3000; // Poll every 3 seconds normally
-const INITIAL_FAST_POLLS = 10; // Fast polling for first 10 checks (20 seconds)
+const POLL_INTERVAL_INITIAL = 3000; // Poll every 3 seconds initially (first few checks)
+const POLL_INTERVAL_AFTER_CONFIRM = 15000; // Poll every 15 seconds after user likely confirmed (gateway needs time to process)
+const INITIAL_FAST_POLLS = 5; // Fast polling for first 5 checks (15 seconds), then switch to 15-second intervals
+const INITIAL_DELAY = 5000; // Wait 5 seconds before first poll (give gateway time to push USSD)
 
 /**
  * Create a payment transaction
@@ -142,7 +143,7 @@ export const pollTransactionStatus = async (transactionId, timeout = PAYMENT_TIM
 
   return new Promise(async (resolve, reject) => {
     let attempts = 0;
-    let pollInterval = POLL_INTERVAL_INITIAL; // Start with faster polling
+    let pollInterval = POLL_INTERVAL_INITIAL; // Start with initial polling
 
     const poll = async () => {
       try {
@@ -160,7 +161,7 @@ export const pollTransactionStatus = async (transactionId, timeout = PAYMENT_TIM
         const paymentStatus = (statusResult.paymentStatus || '').toUpperCase();
 
         // Log status for debugging
-        console.log(`[FastLipa] Poll attempt ${attempts}: Status = ${paymentStatus}`, statusResult);
+        console.log(`[FastLipa] Poll attempt ${attempts} (${Math.floor(elapsedTime / 1000)}s elapsed): Status = ${paymentStatus}`, statusResult);
 
         // Call status update callback if provided
         if (onStatusUpdate) {
@@ -201,9 +202,11 @@ export const pollTransactionStatus = async (transactionId, timeout = PAYMENT_TIM
           return;
         }
 
-        // Switch to normal polling interval after initial fast polls
+        // Switch to longer polling interval after initial fast polls
+        // This gives the gateway time to process after user confirms payment
         if (attempts >= INITIAL_FAST_POLLS) {
-          pollInterval = POLL_INTERVAL_NORMAL;
+          pollInterval = POLL_INTERVAL_AFTER_CONFIRM;
+          console.log(`[FastLipa] Switching to 15-second polling interval (attempt ${attempts})`);
         }
 
         // If still pending or unknown status, continue polling
@@ -216,14 +219,16 @@ export const pollTransactionStatus = async (transactionId, timeout = PAYMENT_TIM
         if (elapsedTime >= timeout) {
           reject(new Error('Payment request timeout. Please check your phone for payment confirmation or try again.'));
         } else {
-          // Retry after a short delay (use normal interval on error)
-          setTimeout(poll, POLL_INTERVAL_NORMAL);
+          // Retry after the current interval (use longer interval if we've passed initial polls)
+          const retryInterval = attempts >= INITIAL_FAST_POLLS ? POLL_INTERVAL_AFTER_CONFIRM : pollInterval;
+          setTimeout(poll, retryInterval);
         }
       }
     };
 
-    // Start polling after a small initial delay to allow USSD to be pushed
-    setTimeout(poll, 1000);
+    // Start polling after initial delay to allow USSD to be pushed and gateway to initialize
+    console.log(`[FastLipa] Starting status polling for transaction ${transactionId} after ${INITIAL_DELAY}ms delay`);
+    setTimeout(poll, INITIAL_DELAY);
   });
 };
 
@@ -244,17 +249,18 @@ export const processFastLipaPayment = async (phoneNumber, amount, customerName, 
       throw new Error(transaction.message || 'Failed to create payment transaction');
     }
 
-    // Notify that USSD has been pushed
-    if (onStatusUpdate) {
-      onStatusUpdate({
-        status: 'USSD_PUSHED',
-        transactionId: transaction.transactionId,
-        message: 'Payment request sent to your phone'
-      });
-    }
+      // Notify that USSD has been pushed
+      if (onStatusUpdate) {
+        onStatusUpdate({
+          status: 'USSD_PUSHED',
+          transactionId: transaction.transactionId,
+          message: 'Payment request sent to your phone'
+        });
+      }
 
-    // Small delay to allow USSD to be pushed to user's phone
-    await new Promise(resolve => setTimeout(resolve, 2000));
+      // Delay to allow USSD to be pushed to user's phone and gateway to process
+      // The polling will start after INITIAL_DELAY (5 seconds) from when polling begins
+      console.log('[FastLipa] Transaction created, USSD push initiated. Starting status polling...');
 
     // Poll for payment status
     const paymentResult = await pollTransactionStatus(

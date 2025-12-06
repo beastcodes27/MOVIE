@@ -1,0 +1,192 @@
+================================================================================
+FIREBASE FIRESTORE SECURITY RULES - COMPLETE & UPDATED
+================================================================================
+
+Copy everything below and paste into Firebase Console → Firestore Database → Rules
+
+================================================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return request.auth != null && 
+             request.auth.token.email in ['imanibraah@gmail.com'];
+    }
+    
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if user owns the resource
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // ========================================
+    // MOVIES COLLECTION
+    // ========================================
+    match /movies/{movieId} {
+      // Anyone can read movies (including unauthenticated users for browsing)
+      allow read: if true;
+      
+      // Only admins can create, update, or delete movies
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+    
+    // ========================================
+    // USERS COLLECTION
+    // ========================================
+    match /users/{userId} {
+      // Users can read their own data
+      // Admins can read any user's data (for User Management)
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      
+      // Users can create and update their own profile
+      allow create: if isAuthenticated() && isOwner(userId);
+      allow update: if isAuthenticated() && isOwner(userId);
+      
+      // Only admins can delete user profiles
+      allow delete: if isAdmin();
+    }
+    
+    // ========================================
+    // PURCHASES COLLECTION
+    // ========================================
+    // Document ID format: {userId}_{movieId}
+    match /purchases/{purchaseId} {
+      // Helper to extract userId from purchaseId
+      function getPurchaseUserId() {
+        return purchaseId.split('_')[0];
+      }
+      
+      // Users can read their own purchases
+      // Admins can read all purchases
+      allow read: if isAuthenticated() && (
+        getPurchaseUserId() == request.auth.uid || 
+        isAdmin()
+      );
+      
+      // Users can create their own purchases
+      // Purchase ID must start with their user ID
+      allow create: if isAuthenticated() && 
+                    getPurchaseUserId() == request.auth.uid;
+      
+      // No updates or deletes for purchases (immutable)
+      allow update: if false;
+      allow delete: if false;
+    }
+    
+    // ========================================
+    // USER PURCHASES COLLECTION
+    // ========================================
+    // Document ID format: {userId}
+    match /userPurchases/{userId} {
+      // Users can read their own purchase list
+      // Admins can read any user's purchase list
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      
+      // Users can create and update their own purchase list
+      allow create: if isAuthenticated() && isOwner(userId);
+      allow update: if isAuthenticated() && isOwner(userId);
+      
+      // No deletes (keep purchase history)
+      allow delete: if false;
+    }
+    
+    // ========================================
+    // USER FAVORITES COLLECTION
+    // ========================================
+    // Document ID format: {userId}
+    match /userFavorites/{userId} {
+      // Users can read their own favorites
+      // Admins can read any user's favorites
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      
+      // Users can create and update their own favorites
+      allow create: if isAuthenticated() && isOwner(userId);
+      allow update: if isAuthenticated() && isOwner(userId);
+      
+      // No deletes (keep favorites history)
+      allow delete: if false;
+    }
+    
+    // ========================================
+    // REVIEWS COLLECTION
+    // ========================================
+    match /reviews/{reviewId} {
+      // Anyone can read reviews (including unauthenticated users for browsing)
+      allow read: if true;
+      
+      // Users can create their own reviews
+      allow create: if isAuthenticated() && 
+                    request.resource.data.userId == request.auth.uid;
+      
+      // Users can update their own reviews (for editing)
+      allow update: if isAuthenticated() && 
+                    resource.data.userId == request.auth.uid &&
+                    request.resource.data.userId == request.auth.uid;
+      
+      // No deletes (keep review history)
+      allow delete: if false;
+    }
+    
+    // ========================================
+    // DEFAULT: DENY ALL OTHER COLLECTIONS
+    // ========================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
+================================================================================
+HOW TO APPLY:
+================================================================================
+
+1. Go to: https://console.firebase.google.com/
+2. Select your project: shoppin-9af74
+3. Navigate to: Firestore Database → Rules
+4. Replace all existing rules with the rules above
+5. Click "Publish"
+6. Wait for confirmation
+
+================================================================================
+COLLECTIONS COVERED:
+================================================================================
+
+✅ movies - Movie catalog (public read, admin write)
+✅ users - User profiles (own read/write, admin full access)
+✅ purchases - Premium movie purchase records (immutable)
+✅ userPurchases - Quick lookup for user's purchased movies
+✅ userFavorites - User's favorite movies list
+✅ reviews - Movie reviews (public read, authenticated create/update)
+
+================================================================================
+KEY FEATURES:
+================================================================================
+
+🔓 Public Access:
+   - Movies: Anyone can browse/search movies
+   - Reviews: Anyone can read reviews
+
+🔐 Authenticated Access:
+   - Users can manage their own profile, purchases, favorites
+   - Users can create and edit their own reviews
+
+👑 Admin Access:
+   - Full access to all collections
+   - Can manage movies, users, view all purchases
+
+🔒 Security:
+   - Purchases are immutable (no updates/deletes)
+   - Users can only access their own data
+   - All other collections are denied by default
+
+================================================================================
+
