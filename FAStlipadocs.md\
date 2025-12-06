@@ -1,0 +1,19 @@
+creating the transaction 
+
+ curl -X POST "https://api.fastlipa.com/api/create-transaction" \
+  -H "Authorization: Bearer FastLipa_JRyIKYbzS9ZdCQRN3cUtEQ" \
+  -H "Content-Type: application/json" \
+  -d '{"number":"0793710144","amount":500,"name":"John Doe"}' 
+
+  response
+
+  {"status":"success","message":"Payment created","data":{"tranID":"pay_gTPyr1sFLP","amount":500,"number":"255793710144","network":"Unknown","status":"PENDING","time":"2025-12-02T20:08:51.000000Z"}}
+
+  checking transaction status 
+
+  curl -X GET "https://api.fastlipa.com/api/status-transaction?tranid=pay_gTPyr1sFLP" \
+  -H "Authorization: Bearer FastLipa_JRyIKYbzS9ZdCQRN3cUtEQ"
+
+response
+
+"status":"success","message":"Payment status retrieved","data":{"tranid":"pay_gTPyr1sFLP","payment_status":"PENDING","amount":"500","network":"Unknown","time":"2025-12-02T20:08:51.000000Z"}}

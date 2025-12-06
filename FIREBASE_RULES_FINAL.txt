@@ -1,0 +1,146 @@
+================================================================================
+🔥 FIREBASE FIRESTORE SECURITY RULES - FINAL VERSION
+================================================================================
+
+Copy everything from rules_version to the closing brace and paste into Firebase Console
+
+================================================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return request.auth != null && 
+             request.auth.token.email in ['imanibraah@gmail.com'];
+    }
+    
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if user owns the resource
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // ========================================
+    // MOVIES COLLECTION
+    // ========================================
+    match /movies/{movieId} {
+      // Anyone authenticated can read movies
+      allow read: if isAuthenticated();
+      
+      // Only admins can create, update, or delete movies
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+    
+    // ========================================
+    // USERS COLLECTION
+    // ========================================
+    match /users/{userId} {
+      // Users can read their own data
+      // Admins can read any user's data (for User Management)
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      
+      // Users can create and update their own profile
+      allow create: if isAuthenticated() && isOwner(userId);
+      allow update: if isAuthenticated() && isOwner(userId);
+      
+      // Only admins can delete user profiles
+      allow delete: if isAdmin();
+    }
+    
+    // ========================================
+    // PURCHASES COLLECTION
+    // ========================================
+    // Document ID format: {userId}_{movieId}
+    match /purchases/{purchaseId} {
+      // Helper to extract userId from purchaseId
+      function getPurchaseUserId() {
+        return purchaseId.split('_')[0];
+      }
+      
+      // Users can read their own purchases
+      // Admins can read all purchases
+      allow read: if isAuthenticated() && (
+        getPurchaseUserId() == request.auth.uid || 
+        isAdmin()
+      );
+      
+      // Users can create their own purchases
+      // Purchase ID must start with their user ID
+      allow create: if isAuthenticated() && 
+                    getPurchaseUserId() == request.auth.uid;
+      
+      // No updates or deletes for purchases (immutable)
+      allow update: if false;
+      allow delete: if false;
+    }
+    
+    // ========================================
+    // USER PURCHASES COLLECTION
+    // ========================================
+    // Document ID format: {userId}
+    match /userPurchases/{userId} {
+      // Users can read their own purchase list
+      // Admins can read any user's purchase list
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      
+      // Users can create and update their own purchase list
+      allow create: if isAuthenticated() && isOwner(userId);
+      allow update: if isAuthenticated() && isOwner(userId);
+      
+      // No deletes (keep purchase history)
+      allow delete: if false;
+    }
+    
+    // ========================================
+    // DEFAULT: DENY ALL OTHER COLLECTIONS
+    // ========================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
+================================================================================
+📋 HOW TO APPLY:
+================================================================================
+
+1. Open: https://console.firebase.google.com/
+2. Select project: shoppin-9af74
+3. Click: Firestore Database (left sidebar)
+4. Click: Rules tab
+5. Select all existing rules and DELETE
+6. PASTE the rules above (from rules_version to closing brace)
+7. Click: PUBLISH button
+8. Wait for confirmation ✅
+
+================================================================================
+✅ COLLECTIONS COVERED:
+================================================================================
+
+1. movies - Movie catalog (read: all users, write: admin only)
+2. users - User profiles (read: own + admin, write: own, delete: admin only)
+3. purchases - Premium purchases (read: own + admin, create: own only)
+4. userPurchases - Purchase lookup (read: own + admin, write: own only)
+
+================================================================================
+🔐 ADMIN EMAIL:
+================================================================================
+
+imanibraah@gmail.com
+
+================================================================================
+
+
+
+
+
+
+

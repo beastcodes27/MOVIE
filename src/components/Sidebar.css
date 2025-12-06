@@ -1,0 +1,651 @@
+/* ============================================
+   TOP BAR
+   ============================================ */
+.topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  pointer-events: auto;
+}
+
+/* Ensure topbar is always visible on mobile */
+@media (max-width: 767px) {
+  .topbar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    height: 64px !important;
+    z-index: 1001 !important;
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+}
+
+.topbar-content {
+  width: 100%;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  pointer-events: auto;
+  position: relative;
+  z-index: 1001;
+}
+
+/* Mobile topbar adjustments */
+@media (max-width: 767px) {
+  .topbar-content {
+    padding: 0 12px;
+    gap: 12px;
+  }
+}
+
+.hamburger-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4a5568;
+  transition: all 0.3s ease;
+  border-radius: 8px;
+  flex-shrink: 0;
+  min-width: 44px;
+  min-height: 44px;
+  touch-action: manipulation;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: rgba(66, 153, 225, 0.2);
+  -webkit-user-select: none;
+  user-select: none;
+  position: relative;
+  z-index: 1002;
+}
+
+.hamburger-btn:hover {
+  background: #f7fafc;
+  color: #2d3748;
+}
+
+.hamburger-btn:active {
+  transform: scale(0.95);
+}
+
+.hamburger-btn svg {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.hamburger-btn.is-active {
+  color: #e53e3e;
+}
+
+.hamburger-btn.is-active:hover {
+  background: #fee;
+  color: #c53030;
+}
+
+/* Ensure hamburger button is always visible and clickable on mobile */
+@media (max-width: 767px) {
+  .hamburger-btn {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 1002 !important;
+    position: relative !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+    padding: 12px !important;
+    background: transparent !important;
+    border: none !important;
+    cursor: pointer !important;
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    -webkit-tap-highlight-color: rgba(66, 153, 225, 0.3) !important;
+    -webkit-user-select: none !important;
+    user-select: none !important;
+  }
+  
+  .hamburger-btn svg {
+    display: block !important;
+    visibility: visible !important;
+    width: 24px !important;
+    height: 24px !important;
+    pointer-events: none !important;
+  }
+
+  .hamburger-btn:active,
+  .hamburger-btn:focus {
+    background: rgba(226, 232, 240, 0.8) !important;
+    transform: scale(0.95) !important;
+    outline: none !important;
+  }
+}
+
+/* Mobile touch improvements */
+@media (max-width: 767px) {
+  .hamburger-btn {
+    padding: 12px;
+    min-width: 48px;
+    min-height: 48px;
+  }
+  
+  .hamburger-btn:active {
+    background: #e2e8f0;
+    transform: scale(0.9);
+  }
+}
+
+.hamburger-btn:hover {
+  background: #f0f4f8;
+  color: #2d3748;
+}
+
+.hamburger-btn:active {
+  transform: scale(0.95);
+}
+
+.hamburger-btn svg {
+  width: 24px;
+  height: 24px;
+}
+
+.topbar-logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #4299e1;
+  text-decoration: none;
+  letter-spacing: 1px;
+  transition: color 0.2s ease;
+  display: block;
+  visibility: visible;
+  opacity: 1;
+}
+
+.topbar-logo:hover {
+  color: #3182ce;
+}
+
+/* Mobile logo adjustments */
+@media (max-width: 767px) {
+  .topbar-logo {
+    font-size: 1.1rem;
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+  }
+}
+
+/* ============================================
+   SIDEBAR OVERLAY
+   ============================================ */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 998;
+  animation: fadeIn 0.3s ease;
+  backdrop-filter: blur(4px);
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (min-width: 768px) {
+  .sidebar-overlay {
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(2px);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* ============================================
+   SIDEBAR
+   ============================================ */
+.sidebar {
+  position: fixed;
+  top: 64px;
+  left: 0;
+  height: calc(100vh - 64px);
+  width: 260px;
+  background: #ffffff;
+  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.1);
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+/* Mobile: Hidden by default, slides in from left */
+@media (max-width: 767px) {
+  .sidebar {
+    transform: translateX(-100%);
+    width: 85%;
+    max-width: 280px;
+    min-width: 240px;
+    will-change: transform;
+    touch-action: pan-y;
+    visibility: visible;
+    display: flex !important;
+    -webkit-transform: translateX(-100%);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+  }
+
+  .sidebar.sidebar-open {
+    transform: translateX(0);
+    -webkit-transform: translateX(0);
+    animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: flex !important;
+  }
+}
+
+/* Extra small phones (320px - 374px) */
+@media (max-width: 374px) {
+  .sidebar {
+    width: 85%;
+    min-width: 220px;
+    max-width: 260px;
+  }
+}
+
+/* Desktop: Hidden by default, shown when hamburger is clicked */
+@media (min-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+
+  .sidebar.sidebar-open {
+    transform: translateX(0);
+  }
+}
+
+/* ============================================
+   SIDEBAR NAVIGATION
+   ============================================ */
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 20px 0;
+  margin-top: 50px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile nav adjustments */
+@media (max-width: 767px) {
+  .sidebar-nav {
+    padding: 16px 0;
+    margin-top: 40px;
+    padding-bottom: 20px;
+  }
+}
+
+.sidebar-menu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 24px;
+  color: #4a5568;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  position: relative;
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin: 2px 8px;
+  border-radius: 8px;
+  min-height: 48px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Mobile menu item improvements */
+@media (max-width: 767px) {
+  .sidebar-menu-item {
+    padding: 16px 20px;
+    margin: 4px 12px;
+    min-height: 52px;
+    font-size: 1rem;
+    gap: 18px;
+  }
+  
+  .sidebar-menu-item:active {
+    background: #dbeafe;
+    transform: scale(0.98);
+  }
+}
+
+.sidebar-menu-item:hover {
+  background: #f0f4f8;
+  color: #4299e1;
+}
+
+.sidebar-menu-item.active {
+  background: #e6f2ff;
+  color: #4299e1;
+  font-weight: 600;
+}
+
+.sidebar-menu-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 24px;
+  background: #4299e1;
+  border-radius: 0 4px 4px 0;
+}
+
+.logout-menu-item {
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  color: #e74c3c;
+}
+
+.logout-menu-item:hover {
+  background: #ffebee;
+  color: #c0392b;
+}
+
+.logout-menu-item .sidebar-icon {
+  color: inherit;
+}
+
+
+.sidebar-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  color: inherit;
+}
+
+/* Mobile icon adjustments */
+@media (max-width: 767px) {
+  .sidebar-icon {
+    width: 26px;
+    height: 26px;
+  }
+}
+
+.sidebar-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.sidebar-label {
+  white-space: nowrap;
+  transition: opacity 0.2s ease;
+}
+
+
+/* ============================================
+   SMOOTH SCROLLBAR
+   ============================================ */
+.sidebar-nav::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 3px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
+
+/* ============================================
+   PAGE WRAPPER (Content adjustment)
+   ============================================ */
+.page-wrapper {
+  margin-top: 64px;
+  min-height: calc(100vh - 64px);
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: #f7fafc;
+}
+
+@media (min-width: 768px) {
+  .page-wrapper {
+    margin-left: 260px;
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* When sidebar is hidden on desktop, remove margin */
+  body:has(.sidebar:not(.sidebar-open)) .page-wrapper,
+  .page-wrapper.sidebar-hidden {
+    margin-left: 0;
+  }
+
+}
+
+@media (max-width: 767px) {
+  .page-wrapper {
+    margin-left: 0;
+    padding: 16px 12px;
+    width: 100%;
+    overflow-x: hidden;
+  }
+}
+
+/* Prevent horizontal scroll on mobile */
+@media (max-width: 767px) {
+  body {
+    overflow-x: hidden;
+    position: relative;
+  }
+  
+  html {
+    overflow-x: hidden;
+  }
+}
+
+/* ============================================
+   MOBILE DEVICE SPECIFIC FIXES
+   ============================================ */
+
+/* iOS Safari specific fixes */
+@supports (-webkit-touch-callout: none) {
+  .topbar {
+    position: -webkit-sticky;
+    position: sticky;
+  }
+  
+  .sidebar {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  @media (max-width: 767px) {
+    .topbar {
+      position: fixed !important;
+    }
+  }
+}
+
+/* Android Chrome specific fixes */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  .topbar {
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+}
+
+/* Ensure all mobile elements are visible */
+@media (max-width: 767px) {
+  .topbar-content {
+    display: flex !important;
+    visibility: visible !important;
+    width: 100% !important;
+  }
+  
+  /* Force visibility on mobile */
+  .hamburger-btn,
+  .topbar-logo,
+  .topbar {
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: flex !important;
+  }
+}
+
+/* ============================================
+   RESPONSIVE IMPROVEMENTS
+   ============================================ */
+@media (max-width: 480px) {
+  .topbar-content {
+    padding: 0 12px;
+    gap: 10px;
+  }
+
+  .topbar-logo {
+    font-size: 1.1rem;
+    letter-spacing: 0.5px;
+  }
+  
+  .hamburger-btn {
+    padding: 10px;
+  }
+
+  .sidebar {
+    width: 85%;
+    max-width: 260px;
+    min-width: 220px;
+  }
+  
+  .sidebar-nav {
+    padding: 12px 0;
+    margin-top: 30px;
+  }
+  
+  .sidebar-menu-item {
+    padding: 14px 18px;
+    margin: 3px 10px;
+    font-size: 0.95rem;
+  }
+}
+
+/* Extra small devices (320px - 374px) */
+@media (max-width: 374px) {
+  .topbar {
+    height: 56px;
+  }
+  
+  .topbar-content {
+    padding: 0 10px;
+    gap: 8px;
+  }
+
+  .topbar-logo {
+    font-size: 1rem;
+  }
+  
+  .hamburger-btn {
+    padding: 8px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+  
+  .hamburger-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .sidebar {
+    top: 56px;
+    height: calc(100vh - 56px);
+    width: 85%;
+    min-width: 200px;
+    max-width: 240px;
+  }
+  
+  .sidebar-menu-item {
+    padding: 12px 16px;
+    margin: 2px 8px;
+    font-size: 0.9rem;
+    min-height: 48px;
+  }
+  
+  .sidebar-icon {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .page-wrapper {
+    margin-top: 56px;
+    min-height: calc(100vh - 56px);
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar,
+  .sidebar-menu-item,
+  .hamburger-btn,
+  .page-wrapper {
+    transition: none;
+  }
+}
+
+/* Focus states for keyboard navigation */
+.sidebar-menu-item:focus-visible,
+.hamburger-btn:focus-visible {
+  outline: 2px solid #4299e1;
+  outline-offset: 2px;
+}
