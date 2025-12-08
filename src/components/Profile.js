@@ -4,6 +4,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { uploadImageToImgBB } from '../services/imgbbService';
+import { getUserTransactionHistory } from '../services/purchaseService';
+import { formatPrice } from '../utils/currency';
 import './Profile.css';
 
 const Profile = () => {
@@ -16,6 +18,9 @@ const Profile = () => {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [transactions, setTransactions] = useState([]);
+  const [loadingTransactions, setLoadingTransactions] = useState(false);
+  const [showTransactions, setShowTransactions] = useState(false);
   
   // Form states
   const [formData, setFormData] = useState({
@@ -75,7 +80,25 @@ const Profile = () => {
     };
 
     loadProfile();
+    if (currentUser) {
+      fetchTransactions();
+    }
   }, [currentUser]);
+
+  // Fetch transaction history
+  const fetchTransactions = async () => {
+    if (!currentUser) return;
+    
+    setLoadingTransactions(true);
+    try {
+      const transactionHistory = await getUserTransactionHistory(currentUser.uid);
+      setTransactions(transactionHistory);
+    } catch (err) {
+      console.error('Error loading transaction history:', err);
+    } finally {
+      setLoadingTransactions(false);
+    }
+  };
 
   // Handle form input changes
   const handleInputChange = (e) => {
@@ -391,6 +414,17 @@ const Profile = () => {
                   </div>
                 </div>
                 
+                {/* Transaction History Button */}
+                <button 
+                  className="transactions-btn" 
+                  onClick={() => setShowTransactions(!showTransactions)}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  {showTransactions ? 'Hide' : 'Show'} Purchase History
+                </button>
+
                 {/* Logout Button */}
                 <button 
                   className="logout-btn" 
@@ -402,6 +436,64 @@ const Profile = () => {
                   Logout
                 </button>
               </div>
+
+              {/* Transaction History Section */}
+              {showTransactions && (
+                <div className="transactions-section">
+                  <h3 className="transactions-title">Purchase History</h3>
+                  {loadingTransactions ? (
+                    <div className="loading">Loading transactions...</div>
+                  ) : transactions.length === 0 ? (
+                    <div className="no-transactions">
+                      <p>No purchases yet. Start exploring movies to make your first purchase!</p>
+                    </div>
+                  ) : (
+                    <div className="transactions-list">
+                      {transactions.map((transaction) => (
+                        <div key={transaction.id} className="transaction-item">
+                          {transaction.movie?.posterImage && (
+                            <img 
+                              src={transaction.movie.posterImage} 
+                              alt={transaction.movie.movieName || 'Movie'} 
+                              className="transaction-poster"
+                            />
+                          )}
+                          <div className="transaction-details">
+                            <h4 className="transaction-movie-name">
+                              {transaction.movie?.movieName || 'Movie Deleted'}
+                            </h4>
+                            <div className="transaction-info">
+                              <span className="transaction-price">
+                                {formatPrice(transaction.price || 0)}
+                              </span>
+                              <span className="transaction-date">
+                                {new Date(transaction.purchasedAt).toLocaleDateString('en-US', {
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </span>
+                            </div>
+                            {transaction.transactionId && (
+                              <div className="transaction-id">
+                                <span>Transaction ID:</span>
+                                <code>{transaction.transactionId}</code>
+                              </div>
+                            )}
+                            <div className="transaction-status">
+                              <span className={`status-badge ${transaction.status || 'completed'}`}>
+                                {transaction.status || 'Completed'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             ) : (
               /* Profile Edit Form */
               <form className="profile-edit-form" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>

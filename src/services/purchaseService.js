@@ -124,6 +124,175 @@ export const getUserPurchasedMovies = async (userId) => {
 };
 
 /**
+ * Get transaction history for a user
+ * @param {string} userId - User ID
+ * @returns {Promise<Array>} - Array of purchase transactions with movie details
+ */
+export const getUserTransactionHistory = async (userId) => {
+  try {
+    if (!userId) {
+      return [];
+    }
+
+    // Get all purchases for this user
+    const purchasesRef = collection(db, 'purchases');
+    const q = query(purchasesRef, where('userId', '==', userId));
+    const querySnapshot = await getDocs(q);
+
+    const transactions = [];
+    const movieIds = [];
+
+    querySnapshot.forEach((doc) => {
+      const purchase = { id: doc.id, ...doc.data() };
+      transactions.push(purchase);
+      if (purchase.movieId) {
+        movieIds.push(purchase.movieId);
+      }
+    });
+
+    // Sort by purchase date (newest first)
+    transactions.sort((a, b) => {
+      const dateA = new Date(a.purchasedAt || 0);
+      const dateB = new Date(b.purchasedAt || 0);
+      return dateB - dateA;
+    });
+
+    // Fetch movie details for each transaction
+    const transactionsWithMovies = await Promise.all(
+      transactions.map(async (transaction) => {
+        try {
+          const movieDoc = await getDoc(doc(db, 'movies', transaction.movieId));
+          if (movieDoc.exists()) {
+            return {
+              ...transaction,
+              movie: { id: movieDoc.id, ...movieDoc.data() }
+            };
+          }
+          return {
+            ...transaction,
+            movie: null
+          };
+        } catch (error) {
+          console.error(`Error fetching movie ${transaction.movieId}:`, error);
+          return {
+            ...transaction,
+            movie: null
+          };
+        }
+      })
+    );
+
+    return transactionsWithMovies;
+  } catch (error) {
+    console.error('Error getting transaction history:', error);
+    return [];
+  }
+};
+
+/**
+ * Get all transactions (for admin)
+ * @returns {Promise<Array>} - Array of all purchase transactions
+ */
+export const getAllTransactions = async () => {
+  try {
+    const purchasesRef = collection(db, 'purchases');
+    const querySnapshot = await getDocs(purchasesRef);
+
+    const transactions = [];
+
+    querySnapshot.forEach((doc) => {
+      transactions.push({ id: doc.id, ...doc.data() });
+    });
+
+    // Sort by purchase date (newest first)
+    transactions.sort((a, b) => {
+      const dateA = new Date(a.purchasedAt || 0);
+      const dateB = new Date(b.purchasedAt || 0);
+      return dateB - dateA;
+    });
+
+    // Fetch movie and user details for each transaction
+    const transactionsWithDetails = await Promise.all(
+      transactions.map(async (transaction) => {
+        try {
+          const [movieDoc, userDoc] = await Promise.all([
+            getDoc(doc(db, 'movies', transaction.movieId)).catch(() => null),
+            getDoc(doc(db, 'users', transaction.userId)).catch(() => null)
+          ]);
+
+          return {
+            ...transaction,
+            movie: movieDoc?.exists() ? { id: movieDoc.id, ...movieDoc.data() } : null,
+            user: userDoc?.exists() ? { id: userDoc.id, ...userDoc.data() } : null
+          };
+        } catch (error) {
+          console.error(`Error fetching details for transaction ${transaction.id}:`, error);
+          return {
+            ...transaction,
+            movie: null,
+            user: null
+          };
+        }
+      })
+    );
+
+    return transactionsWithDetails;
+  } catch (error) {
+    console.error('Error getting all transactions:', error);
+    return [];
+  }
+};
+
+/**
+ * Get transaction statistics (for admin)
+ * @returns {Promise<Object>} - Transaction statistics
+ */
+export const getTransactionStats = async () => {
+  try {
+    const transactions = await getAllTransactions();
+
+    const stats = {
+      totalTransactions: transactions.length,
+      totalRevenue: 0,
+      totalUsers: new Set(),
+      transactionsByDate: {},
+      recentTransactions: transactions.slice(0, 10)
+    };
+
+    transactions.forEach((transaction) => {
+      // Calculate revenue
+      if (transaction.price) {
+        stats.totalRevenue += parseFloat(transaction.price);
+      }
+
+      // Count unique users
+      if (transaction.userId) {
+        stats.totalUsers.add(transaction.userId);
+      }
+
+      // Group by date
+      if (transaction.purchasedAt) {
+        const date = new Date(transaction.purchasedAt).toLocaleDateString();
+        stats.transactionsByDate[date] = (stats.transactionsByDate[date] || 0) + 1;
+      }
+    });
+
+    stats.totalUsers = stats.totalUsers.size;
+
+    return stats;
+  } catch (error) {
+    console.error('Error getting transaction stats:', error);
+    return {
+      totalTransactions: 0,
+      totalRevenue: 0,
+      totalUsers: 0,
+      transactionsByDate: {},
+      recentTransactions: []
+    };
+  }
+};
+
+/**
  * Simulate payment processing
  * @param {number} amount - Payment amount
  * @returns {Promise<Object>} - Payment result

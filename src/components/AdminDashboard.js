@@ -6,6 +6,7 @@ import { uploadImageToImgBB } from '../services/imgbbService';
 import { formatPrice } from '../utils/currency';
 import { MOVIE_CATEGORIES, DEFAULT_CATEGORY } from '../constants/movieCategories';
 import { MOVIE_GENRES, DEFAULT_GENRE } from '../constants/movieGenres';
+import { getAllTransactions, getTransactionStats } from '../services/purchaseService';
 import TrailerModal from './TrailerModal';
 import './AdminDashboard.css';
 
@@ -40,10 +41,36 @@ const AdminDashboard = () => {
     categories: {},
     recentMovies: 0
   });
+  const [transactions, setTransactions] = useState([]);
+  const [transactionStats, setTransactionStats] = useState({
+    totalTransactions: 0,
+    totalRevenue: 0,
+    totalUsers: 0
+  });
+  const [loadingTransactions, setLoadingTransactions] = useState(false);
+  const [showTransactions, setShowTransactions] = useState(false);
 
   useEffect(() => {
     fetchMovies();
+    fetchTransactionData();
   }, []);
+
+  const fetchTransactionData = async () => {
+    setLoadingTransactions(true);
+    try {
+      const [allTransactions, stats] = await Promise.all([
+        getAllTransactions(),
+        getTransactionStats()
+      ]);
+      setTransactions(allTransactions);
+      setTransactionStats(stats);
+    } catch (error) {
+      console.error('Error fetching transaction data:', error);
+      setError('Error loading transaction data');
+    } finally {
+      setLoadingTransactions(false);
+    }
+  };
 
   const fetchMovies = async () => {
     try {
@@ -348,7 +375,135 @@ const AdminDashboard = () => {
               <p>Recent (7 days)</p>
             </div>
           </div>
+          <div className="stat-card">
+            <div className="stat-icon">💰</div>
+            <div className="stat-content">
+              <h3>{transactionStats.totalTransactions}</h3>
+              <p>Total Transactions</p>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon">💵</div>
+            <div className="stat-content">
+              <h3>{formatPrice(transactionStats.totalRevenue)}</h3>
+              <p>Total Revenue</p>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon">👥</div>
+            <div className="stat-content">
+              <h3>{transactionStats.totalUsers}</h3>
+              <p>Purchasing Users</p>
+            </div>
+          </div>
         </div>
+
+        {/* Transaction History Button */}
+        <div className="admin-actions">
+          <button
+            onClick={() => setShowTransactions(!showTransactions)}
+            className="transactions-toggle-btn"
+          >
+            {showTransactions ? '✕ Hide' : '📊 View'} Transaction History
+          </button>
+        </div>
+
+        {/* Transaction History Section */}
+        {showTransactions && (
+          <div className="admin-transactions-section">
+            <h2 className="section-title">Transaction History</h2>
+            {loadingTransactions ? (
+              <div className="loading">Loading transactions...</div>
+            ) : transactions.length === 0 ? (
+              <div className="no-transactions">
+                <p>No transactions yet.</p>
+              </div>
+            ) : (
+              <>
+                <div className="transactions-summary">
+                  <div className="summary-item">
+                    <span className="summary-label">Total Transactions:</span>
+                    <span className="summary-value">{transactionStats.totalTransactions}</span>
+                  </div>
+                  <div className="summary-item">
+                    <span className="summary-label">Total Revenue:</span>
+                    <span className="summary-value">{formatPrice(transactionStats.totalRevenue)}</span>
+                  </div>
+                  <div className="summary-item">
+                    <span className="summary-label">Unique Users:</span>
+                    <span className="summary-value">{transactionStats.totalUsers}</span>
+                  </div>
+                </div>
+                <div className="admin-transactions-table-container">
+                  <table className="admin-transactions-table">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>User</th>
+                        <th>Movie</th>
+                        <th>Amount</th>
+                        <th>Transaction ID</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {transactions.map((transaction) => (
+                        <tr key={transaction.id}>
+                          <td>
+                            {new Date(transaction.purchasedAt).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </td>
+                          <td>
+                            <div className="transaction-user">
+                              {transaction.user?.profilePicture ? (
+                                <img 
+                                  src={transaction.user.profilePicture} 
+                                  alt={transaction.user.displayName || 'User'} 
+                                  className="user-avatar-small"
+                                />
+                              ) : (
+                                <div className="user-avatar-placeholder-small">
+                                  {(transaction.user?.displayName || transaction.user?.email || 'U').charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                              <span>{transaction.user?.displayName || transaction.user?.email || 'Unknown User'}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <div className="transaction-movie">
+                              {transaction.movie?.posterImage && (
+                                <img 
+                                  src={transaction.movie.posterImage} 
+                                  alt={transaction.movie.movieName || 'Movie'} 
+                                  className="movie-poster-small"
+                                />
+                              )}
+                              <span>{transaction.movie?.movieName || 'Movie Deleted'}</span>
+                            </div>
+                          </td>
+                          <td className="transaction-amount">{formatPrice(transaction.price || 0)}</td>
+                          <td>
+                            <code className="transaction-id-code">{transaction.transactionId || 'N/A'}</code>
+                          </td>
+                          <td>
+                            <span className={`status-badge ${transaction.status || 'completed'}`}>
+                              {transaction.status || 'Completed'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+          </div>
+        )}
 
         {/* Action Button */}
         <div className="admin-actions">
