@@ -164,4 +164,3 @@ The sidebar now works **perfectly** on all device sizes, from large desktops dow
 
 
 
-

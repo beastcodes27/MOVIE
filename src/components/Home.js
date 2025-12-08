@@ -196,6 +196,16 @@ const Home = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="search-input"
             />
+            {searchQuery && (
+              <button
+                type="button"
+                className="search-clear"
+                onClick={() => setSearchQuery('')}
+                aria-label="Clear search"
+              >
+                Clear
+              </button>
+            )}
           </div>
         </div>
 

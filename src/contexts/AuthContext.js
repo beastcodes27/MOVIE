@@ -39,13 +39,24 @@ export const AuthProvider = ({ children }) => {
     return signOut(auth);
   };
 
-  const updateUserProfile = (displayName) => {
+  const updateUserProfile = (data) => {
     if (!auth.currentUser) {
       throw new Error('No user is currently signed in');
     }
-    return updateProfile(auth.currentUser, {
-      displayName: displayName
-    });
+    // Support both string (for backward compatibility) and object payloads
+    if (typeof data === 'string') {
+      return updateProfile(auth.currentUser, { displayName: data });
+    }
+
+    const payload = {};
+    if (data?.displayName !== undefined) {
+      payload.displayName = data.displayName;
+    }
+    if (data?.photoURL !== undefined) {
+      payload.photoURL = data.photoURL;
+    }
+
+    return updateProfile(auth.currentUser, payload);
   };
 
   const changePassword = async (currentPassword, newPassword) => {

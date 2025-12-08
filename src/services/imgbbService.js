@@ -3,7 +3,7 @@
  * Handles profile picture uploads to imgBB
  */
 
-const IMGBB_API_KEY = 'cfe7185111917029d548b5462fb64d51';
+const IMGBB_API_KEY = process.env.REACT_APP_IMGBB_API_KEY || 'cfe7185111917029d548b5462fb64d51';
 const IMGBB_API_URL = 'https://api.imgbb.com/1/upload';
 
 /**
@@ -80,7 +80,6 @@ export const fileToBase64 = (file) => {
     reader.onerror = (error) => reject(error);
   });
 };
-
 
 
 

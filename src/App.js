@@ -8,6 +8,7 @@ import Login from './components/Login';
 import Home from './components/Home';
 import Contact from './components/Contact';
 import Profile from './components/Profile';
+import PurchaseHistory from './components/PurchaseHistory';
 import AdminDashboard from './components/AdminDashboard';
 import UserManagement from './components/UserManagement';
 import './App.css';
@@ -42,6 +43,14 @@ function PageContent() {
           element={
             <ProtectedRoute>
               <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/purchase-history"
+          element={
+            <ProtectedRoute>
+              <PurchaseHistory />
             </ProtectedRoute>
           }
         />

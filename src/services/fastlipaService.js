@@ -3,8 +3,8 @@
  * Handles payment transactions via FastLipa API
  */
 
-const FASTLIPA_API_BASE_URL = 'https://api.fastlipa.com/api';
-const FASTLIPA_API_TOKEN = 'FastLipa_JRyIKYbzS9ZdCQRN3cUtEQ';
+const FASTLIPA_API_BASE_URL = process.env.REACT_APP_FASTLIPA_API_BASE_URL || 'https://api.fastlipa.com/api';
+const FASTLIPA_API_TOKEN = process.env.REACT_APP_FASTLIPA_API_TOKEN || 'FastLipa_JRyIKYbzS9ZdCQRN3cUtEQ';
 const PAYMENT_TIMEOUT = 2 * 60 * 1000; // 2 minutes in milliseconds
 const POLL_INTERVAL_INITIAL = 3000; // Poll every 3 seconds initially (first few checks)
 const POLL_INTERVAL_AFTER_CONFIRM = 15000; // Poll every 15 seconds after user likely confirmed (gateway needs time to process)

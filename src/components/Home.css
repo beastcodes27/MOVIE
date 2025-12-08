@@ -35,7 +35,7 @@
 
 .search-input {
   width: 100%;
-  padding: 16px 20px 16px 60px;
+  padding: 16px 100px 16px 60px;
   background: #1a1a1a;
   border: 2px solid #2a2a2a;
   border-radius: 12px;
@@ -52,6 +52,26 @@
 
 .search-input::placeholder {
   color: #666;
+}
+
+.search-clear {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #2a2a2a;
+  color: #fff;
+  border: 1px solid #3a3a3a;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.search-clear:hover {
+  background: #3a3a3a;
+  border-color: #4a4a4a;
 }
 
 /* Trending Section */
