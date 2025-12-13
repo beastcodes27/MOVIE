@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import './Profile.css';
 
-const IMGBB_API_KEY = process.env.REACT_APP_IMGBB_API_KEY || 'cfe7185111917029d548b5462fb64d51';
 const IMGBB_UPLOAD_URL = 'https://api.imgbb.com/1/upload';
 
 const Profile = () => {
@@ -41,7 +40,7 @@ const Profile = () => {
         const base64String = reader.result.split(',')[1];
         
         const formData = new FormData();
-        formData.append('key', IMGBB_API_KEY);
+        formData.append('key', process.env.REACT_APP_IMGBB_API_KEY);
         formData.append('image', base64String);
 
         try {
