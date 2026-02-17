@@ -17,6 +17,7 @@ const PurchaseModal = ({ movie, isOpen, onClose, onSuccess }) => {
   const [checkingStatus, setCheckingStatus] = useState(false);
   const intervalRef = useRef(null);
   const paymentProcessRef = useRef(null);
+  const transactionIdRef = useRef(null);
 
   // Reset form when modal opens/closes
   useEffect(() => {
@@ -26,6 +27,7 @@ const PurchaseModal = ({ movie, isOpen, onClose, onSuccess }) => {
       setStep('payment');
       setTimeRemaining(120);
       setTransactionId(null);
+      transactionIdRef.current = null;
       setStatusMessage('');
       setCheckingStatus(false);
     } else {
@@ -78,18 +80,18 @@ const PurchaseModal = ({ movie, isOpen, onClose, onSuccess }) => {
 
   const validatePhoneNumber = (phone) => {
     // Remove spaces and special characters
-    const cleaned = phone.replace(/[\s\-\(\)]/g, '');
-    
+    const cleaned = phone.replace(/[\s\-()]/g, '');
+
     // Must be exactly 10 digits starting with 0 (Tanzania format)
     if (/^0\d{9}$/.test(cleaned)) {
       return cleaned; // Valid: 0793710144
     }
-    
+
     // If it has country code 255, remove it
     if (/^255\d{9}$/.test(cleaned)) {
       return '0' + cleaned.substring(3); // Convert to 0XXXXXXXXX format
     }
-    
+
     // Invalid format
     return null;
   };
@@ -98,6 +100,7 @@ const PurchaseModal = ({ movie, isOpen, onClose, onSuccess }) => {
     if (update.status === 'USSD_PUSHED') {
       setStep('ussd-pushed');
       setTransactionId(update.transactionId);
+      transactionIdRef.current = update.transactionId;
       setStatusMessage('Payment request sent to your phone. Please check and approve.');
     } else if (update.status) {
       setStatusMessage(`Checking payment status... (Attempt ${update.attempt || 0})`);
@@ -105,7 +108,8 @@ const PurchaseModal = ({ movie, isOpen, onClose, onSuccess }) => {
   };
 
   const handleManualCheckStatus = async () => {
-    if (!transactionId) return;
+    const currentTranId = transactionIdRef.current || transactionId;
+    if (!currentTranId) return;
 
     setCheckingStatus(true);
     setError('');
@@ -115,27 +119,28 @@ const PurchaseModal = ({ movie, isOpen, onClose, onSuccess }) => {
       // Wait a moment before checking to give gateway time to process
       await new Promise(resolve => setTimeout(resolve, 2000));
 
-      const statusResult = await checkTransactionStatus(transactionId);
+      const statusResult = await checkTransactionStatus(currentTranId);
       const paymentStatus = (statusResult.paymentStatus || '').toUpperCase();
 
       console.log('Manual status check:', paymentStatus, statusResult);
 
       // Check if payment is completed
       if (
-        paymentStatus === 'SUCCESS' || 
+        paymentStatus === 'COMPLETE' ||
+        paymentStatus === 'SUCCESS' ||
         paymentStatus === 'COMPLETED' ||
         paymentStatus === 'SUCCESSFUL' ||
         paymentStatus === 'PAID' ||
         paymentStatus === 'CONFIRMED'
       ) {
         setStatusMessage('Payment confirmed! Completing purchase...');
-        
+
         // Payment completed, create purchase record
         await purchaseMovie(
           currentUser.uid,
           movie.id,
           movie.price,
-          transactionId
+          currentTranId
         );
 
         // Success
@@ -148,8 +153,8 @@ const PurchaseModal = ({ movie, isOpen, onClose, onSuccess }) => {
           setTransactionId(null);
         }, 500);
       } else if (
-        paymentStatus === 'FAILED' || 
-        paymentStatus === 'CANCELLED' || 
+        paymentStatus === 'FAILED' ||
+        paymentStatus === 'CANCELLED' ||
         paymentStatus === 'CANCELED' ||
         paymentStatus === 'REJECTED' ||
         paymentStatus === 'DECLINED'
@@ -191,6 +196,7 @@ const PurchaseModal = ({ movie, isOpen, onClose, onSuccess }) => {
     setTimeRemaining(120);
     setStatusMessage('Creating payment request...');
     setTransactionId(null);
+    transactionIdRef.current = null;
 
     try {
       // Get customer name
@@ -235,22 +241,24 @@ const PurchaseModal = ({ movie, isOpen, onClose, onSuccess }) => {
         setLoading(false);
         setPhoneNumber('');
         setTransactionId(null);
+        transactionIdRef.current = null;
         paymentProcessRef.current = null;
       }, 1000);
     } catch (err) {
       console.error('Purchase error:', err);
-      
+
       // If we have a transaction ID, allow manual check
-      if (transactionId && !err.message.includes('timeout')) {
+      const currentTranId = transactionIdRef.current || transactionId;
+      if (currentTranId && !err.message.includes('timeout')) {
         setError(err.message || 'Payment is still processing. Click "Check Status" if you have approved the payment.');
         setStep('ussd-pushed');
       } else {
         setError(err.message || 'Failed to process purchase. Please try again.');
         setStep('payment');
       }
-      
+
       setLoading(false);
-      
+
       // Clear interval on error
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -262,11 +270,11 @@ const PurchaseModal = ({ movie, isOpen, onClose, onSuccess }) => {
   };
 
   const handleClose = () => {
-    if (!loading) {
-      setError('');
-      setStep('payment');
-      onClose();
-    }
+    // Allow closing even if loading, cleanup will handle it
+    setError('');
+    setStep('payment');
+    setLoading(false);
+    onClose();
   };
 
   return (
@@ -329,7 +337,6 @@ const PurchaseModal = ({ movie, isOpen, onClose, onSuccess }) => {
               </button>
               <button
                 onClick={handleClose}
-                disabled={loading}
                 className="cancel-purchase-btn"
               >
                 Cancel
@@ -346,7 +353,7 @@ const PurchaseModal = ({ movie, isOpen, onClose, onSuccess }) => {
             <div className="ussd-sent-icon">📱</div>
             <h3>Payment Request Sent!</h3>
             <p className="status-message">{statusMessage || 'Please check your phone and approve the payment request.'}</p>
-            
+
             {transactionId && (
               <div className="transaction-info">
                 <p className="transaction-id">Transaction ID: <code>{transactionId}</code></p>
@@ -356,8 +363,8 @@ const PurchaseModal = ({ movie, isOpen, onClose, onSuccess }) => {
             <div className="timeout-indicator">
               <p className="time-remaining">Time remaining: {formatTime(timeRemaining)}</p>
               <div className="progress-bar">
-                <div 
-                  className="progress-fill" 
+                <div
+                  className="progress-fill"
                   style={{ width: `${(timeRemaining / 120) * 100}%` }}
                 ></div>
               </div>

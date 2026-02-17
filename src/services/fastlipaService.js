@@ -6,9 +6,9 @@
 const FASTLIPA_API_BASE_URL = process.env.REACT_APP_FASTLIPA_API_BASE_URL || 'https://api.fastlipa.com/api';
 const FASTLIPA_API_TOKEN = process.env.REACT_APP_FASTLIPA_API_TOKEN || 'FastLipa_JRyIKYbzS9ZdCQRN3cUtEQ';
 const PAYMENT_TIMEOUT = 2 * 60 * 1000; // 2 minutes in milliseconds
-const POLL_INTERVAL_INITIAL = 3000; // Poll every 3 seconds initially (first few checks)
-const POLL_INTERVAL_AFTER_CONFIRM = 15000; // Poll every 15 seconds after user likely confirmed (gateway needs time to process)
-const INITIAL_FAST_POLLS = 5; // Fast polling for first 5 checks (15 seconds), then switch to 15-second intervals
+const POLL_INTERVAL_INITIAL = 3000; // Poll every 3 seconds
+const POLL_INTERVAL_AFTER_CONFIRM = 3000; // Poll every 3 seconds
+const INITIAL_FAST_POLLS = 5;
 const INITIAL_DELAY = 5000; // Wait 5 seconds before first poll (give gateway time to push USSD)
 
 /**
@@ -26,15 +26,14 @@ export const createTransaction = async (phoneNumber, amount, name) => {
     }
 
     // Format phone number for Tanzania (format: 0793710144 or 255793710144)
-    let formattedNumber = phoneNumber.trim().replace(/[\s\-\(\)]/g, '');
-    
+    let formattedNumber = phoneNumber.trim().replace(/[\s\-()]/g, '');
+
     // Convert to format expected by API: 255XXXXXXXXX
     if (formattedNumber.startsWith('0')) {
       // Remove leading 0 and add 255
       formattedNumber = '255' + formattedNumber.substring(1);
     } else if (formattedNumber.startsWith('255')) {
       // Already has country code
-      formattedNumber = formattedNumber;
     } else if (formattedNumber.length === 9) {
       // 9 digits without leading 0, add 255
       formattedNumber = '255' + formattedNumber;
@@ -114,11 +113,11 @@ export const checkTransactionStatus = async (transactionId) => {
 
     // Handle different response formats - check both payment_status and status fields
     const paymentStatus = data.data?.payment_status || data.data?.status || data.payment_status || 'UNKNOWN';
-    const transactionId = data.data?.tranid || data.data?.tranID || data.tranid || data.tranID;
+    const resultTransactionId = data.data?.tranid || data.data?.tranID || data.tranid || data.tranID;
 
     return {
       success: true,
-      transactionId: transactionId,
+      transactionId: resultTransactionId,
       paymentStatus: paymentStatus,
       amount: data.data?.amount || data.amount,
       network: data.data?.network || data.network,
@@ -174,7 +173,8 @@ export const pollTransactionStatus = async (transactionId, timeout = PAYMENT_TIM
 
         // Check if payment is completed - check multiple possible success statuses
         if (
-          paymentStatus === 'SUCCESS' || 
+          paymentStatus === 'COMPLETE' ||
+          paymentStatus === 'SUCCESS' ||
           paymentStatus === 'COMPLETED' ||
           paymentStatus === 'SUCCESSFUL' ||
           paymentStatus === 'PAID' ||
@@ -192,15 +192,20 @@ export const pollTransactionStatus = async (transactionId, timeout = PAYMENT_TIM
 
         // Check if payment failed
         if (
-          paymentStatus === 'FAILED' || 
-          paymentStatus === 'CANCELLED' || 
+          paymentStatus === 'FAILED' ||
+          paymentStatus === 'CANCELLED' ||
           paymentStatus === 'CANCELED' ||
           paymentStatus === 'REJECTED' ||
-          paymentStatus === 'DECLINED'
+          paymentStatus === 'DECLINED' ||
+          paymentStatus === 'FAIL'
         ) {
           reject(new Error('Payment failed or was cancelled. Please try again.'));
           return;
         }
+
+        // If status is PENDING or anything else unknown, continue polling
+        console.log(`[FastLipa] Transaction is still ${paymentStatus || 'PENDING'}, continuing to poll...`);
+
 
         // Switch to longer polling interval after initial fast polls
         // This gives the gateway time to process after user confirms payment
@@ -213,7 +218,7 @@ export const pollTransactionStatus = async (transactionId, timeout = PAYMENT_TIM
         setTimeout(poll, pollInterval);
       } catch (error) {
         console.error(`[FastLipa] Poll error on attempt ${attempts}:`, error);
-        
+
         // If error occurs, check if we've exceeded timeout
         const elapsedTime = Date.now() - startTime;
         if (elapsedTime >= timeout) {
@@ -249,22 +254,22 @@ export const processFastLipaPayment = async (phoneNumber, amount, customerName, 
       throw new Error(transaction.message || 'Failed to create payment transaction');
     }
 
-      // Notify that USSD has been pushed
-      if (onStatusUpdate) {
-        onStatusUpdate({
-          status: 'USSD_PUSHED',
-          transactionId: transaction.transactionId,
-          message: 'Payment request sent to your phone'
-        });
-      }
+    // Notify that USSD has been pushed
+    if (onStatusUpdate) {
+      onStatusUpdate({
+        status: 'USSD_PUSHED',
+        transactionId: transaction.transactionId,
+        message: 'Payment request sent to your phone'
+      });
+    }
 
-      // Delay to allow USSD to be pushed to user's phone and gateway to process
-      // The polling will start after INITIAL_DELAY (5 seconds) from when polling begins
-      console.log('[FastLipa] Transaction created, USSD push initiated. Starting status polling...');
+    // Delay to allow USSD to be pushed to user's phone and gateway to process
+    // The polling will start after INITIAL_DELAY (5 seconds) from when polling begins
+    console.log('[FastLipa] Transaction created, USSD push initiated. Starting status polling...');
 
     // Poll for payment status
     const paymentResult = await pollTransactionStatus(
-      transaction.transactionId, 
+      transaction.transactionId,
       PAYMENT_TIMEOUT,
       onStatusUpdate
     );

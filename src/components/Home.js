@@ -25,7 +25,6 @@ const Home = () => {
   const [showMovieDetails, setShowMovieDetails] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const { currentUser } = useAuth();
-  const navigate = useNavigate();
 
   useEffect(() => {
     fetchMovies();
@@ -85,9 +84,9 @@ const Home = () => {
   // Filter movies based on search and category
   const filteredMovies = useMemo(() => {
     return movies.filter(movie => {
-      const matchesSearch = !searchQuery || 
+      const matchesSearch = !searchQuery ||
         movie.movieName?.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = selectedCategory === 'All' || 
+      const matchesCategory = selectedCategory === 'All' ||
         movie.category === selectedCategory;
       return matchesSearch && matchesCategory;
     });
@@ -120,23 +119,8 @@ const Home = () => {
     return grouped;
   }, [filteredMovies]);
 
-  const getYouTubeEmbedUrl = (url) => {
-    if (!url) return '';
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
-    const videoId = (match && match[2].length === 11) ? match[2] : null;
-    return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
-  };
-
   const hasPurchased = (movieId) => {
     return purchasedMovies.includes(movieId);
-  };
-
-  const isMovieAccessible = (movie) => {
-    if (movie.movieType === 'free') {
-      return true;
-    }
-    return hasPurchased(movie.id);
   };
 
   const handleMovieCardClick = (movie) => {
@@ -146,26 +130,11 @@ const Home = () => {
       setShowLoginPrompt(true);
       return;
     }
-    
+
     // User is authenticated, show movie details
     setSelectedMovie(movie);
     setShowMovieDetails(true);
     incrementMovieViews(movie.id);
-  };
-
-  const handleDownloadClick = (e, movie) => {
-    if (!currentUser) {
-      e.preventDefault();
-      setSelectedMovie(movie);
-      setShowLoginPrompt(true);
-      return;
-    }
-    
-    if (movie.movieType === 'premium' && !hasPurchased(movie.id)) {
-      e.preventDefault();
-      setSelectedMovie(movie);
-      setShowPurchaseModal(true);
-    }
   };
 
   const handlePurchaseSuccess = () => {
@@ -236,8 +205,8 @@ const Home = () => {
             </div>
             <div className="movies-row trending-movies-row">
               {trendingMovies.map((movie) => (
-                <div 
-                  key={movie.id} 
+                <div
+                  key={movie.id}
                   className="movie-card trending-movie-card"
                   onClick={() => {
                     handleMovieCardClick(movie);
@@ -248,8 +217,8 @@ const Home = () => {
                   )}
                   <div className="movie-poster-wrapper">
                     {movie.posterImage ? (
-                      <img 
-                        src={movie.posterImage} 
+                      <img
+                        src={movie.posterImage}
                         alt={movie.movieName}
                         className="movie-poster-img"
                         onError={(e) => {
@@ -278,7 +247,7 @@ const Home = () => {
                       </span>
                       <div className="movie-card-rating">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" className="star-icon">
-                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                         </svg>
                         <span>{movie.rating || '5.0'}</span>
                       </div>
@@ -302,8 +271,8 @@ const Home = () => {
                 <h2 className="category-title">{category}</h2>
                 <div className="movies-row">
                   {categoryMovies.map((movie) => (
-                    <div 
-                      key={movie.id} 
+                    <div
+                      key={movie.id}
                       className="movie-card"
                       onClick={() => {
                         handleMovieCardClick(movie);
@@ -311,8 +280,8 @@ const Home = () => {
                     >
                       <div className="movie-poster-wrapper">
                         {movie.posterImage ? (
-                          <img 
-                            src={movie.posterImage} 
+                          <img
+                            src={movie.posterImage}
                             alt={movie.movieName}
                             className="movie-poster-img"
                             onError={(e) => {
@@ -341,7 +310,7 @@ const Home = () => {
                           </span>
                           <div className="movie-card-rating">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" className="star-icon">
-                              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                             </svg>
                             <span>{movie.rating || '5.0'}</span>
                           </div>

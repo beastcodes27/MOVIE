@@ -87,17 +87,17 @@ const MovieDetails = ({ movie, onClose, onPurchaseSuccess }) => {
     e.preventDefault();
     setReviewError('');
     setReviewSuccess('');
-    
+
     if (!currentUser) {
       setReviewError('You must be logged in to submit a review.');
       return;
     }
-    
+
     if (!movie || !movie.id) {
       setReviewError('Movie information is missing.');
       return;
     }
-    
+
     if (!reviewText || !reviewText.trim()) {
       setReviewError('Please write a review comment before submitting.');
       return;
@@ -131,16 +131,16 @@ const MovieDetails = ({ movie, onClose, onPurchaseSuccess }) => {
       setReviewText('');
       setReviewRating(5);
       setReviewSuccess('Review submitted successfully!');
-      
+
       // Fetch reviews after a short delay
       setTimeout(async () => {
         await fetchReviews();
         setReviewSuccess('');
       }, 500);
-      
+
     } catch (error) {
       console.error('Error submitting review:', error);
-      
+
       // Provide more detailed error message
       let errorMessage = 'Failed to submit review. ';
       if (error.message) {
@@ -150,7 +150,7 @@ const MovieDetails = ({ movie, onClose, onPurchaseSuccess }) => {
       } else {
         errorMessage += 'Please check your connection and try again.';
       }
-      
+
       // Check for specific Firebase errors
       if (error.code === 'permission-denied') {
         errorMessage = 'Permission denied. You may not have permission to submit reviews. Please check Firebase security rules.';
@@ -159,7 +159,7 @@ const MovieDetails = ({ movie, onClose, onPurchaseSuccess }) => {
       } else if (error.code === 'failed-precondition') {
         errorMessage = 'Database error. Please refresh the page and try again.';
       }
-      
+
       setReviewError(errorMessage);
     } finally {
       setSubmittingReview(false);
@@ -192,17 +192,17 @@ const MovieDetails = ({ movie, onClose, onPurchaseSuccess }) => {
       <div className="rating-stars">
         {[...Array(fullStars)].map((_, i) => (
           <svg key={`full-${i}`} className="star-icon full" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
           </svg>
         ))}
         {hasHalfStar && (
           <svg className="star-icon half" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
           </svg>
         )}
         {[...Array(emptyStars)].map((_, i) => (
           <svg key={`empty-${i}`} className="star-icon empty" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
           </svg>
         ))}
       </div>
@@ -220,7 +220,7 @@ const MovieDetails = ({ movie, onClose, onPurchaseSuccess }) => {
             onClick={() => setReviewRating(rating)}
           >
             <svg viewBox="0 0 24 24" fill={reviewRating >= rating ? 'currentColor' : 'none'} stroke="currentColor">
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
             </svg>
           </button>
         ))}
@@ -270,16 +270,18 @@ const MovieDetails = ({ movie, onClose, onPurchaseSuccess }) => {
                   disabled={loading}
                 >
                   <svg viewBox="0 0 24 24" fill={isFav ? 'currentColor' : 'none'} stroke="currentColor">
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                   </svg>
                   {isFav ? 'Remove from Favorites' : 'Add to Favorites'}
                 </button>
-                <button className="trailer-details-btn" onClick={handleTrailerClick}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path d="M8 5v14l11-7z"/>
-                  </svg>
-                  Watch Trailer
-                </button>
+                {movie.trailerLink && (
+                  <button className="trailer-details-btn" onClick={handleTrailerClick}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                    Watch Trailer
+                  </button>
+                )}
                 <button
                   className={`download-details-btn ${!isAccessible ? 'premium' : ''}`}
                   onClick={handleDownloadClick}
@@ -287,14 +289,14 @@ const MovieDetails = ({ movie, onClose, onPurchaseSuccess }) => {
                   {movie.movieType === 'premium' && !hasPurchased ? (
                     <>
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path d="M12 2v20M2 12h20"/>
+                        <path d="M12 2v20M2 12h20" />
                       </svg>
                       Buy {formatPrice(movie.price || 0)}
                     </>
                   ) : (
                     <>
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
                       </svg>
                       Download
                     </>
@@ -307,7 +309,7 @@ const MovieDetails = ({ movie, onClose, onPurchaseSuccess }) => {
           {/* Reviews Section */}
           <div className="movie-details-reviews">
             <h2 className="reviews-title">Reviews ({reviews.length})</h2>
-            
+
             {/* Add Review Form */}
             {currentUser && (
               <form className="review-form" onSubmit={handleSubmitReview}>
@@ -390,6 +392,12 @@ const MovieDetails = ({ movie, onClose, onPurchaseSuccess }) => {
           checkPurchase();
           // Track download after purchase
           incrementMovieDownloads(movie.id);
+
+          // Redirect to download link immediately after purchase
+          if (movie.downloadLink) {
+            window.open(movie.downloadLink, '_blank');
+          }
+
           if (onPurchaseSuccess) onPurchaseSuccess();
         }}
       />

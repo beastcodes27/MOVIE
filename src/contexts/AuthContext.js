@@ -10,7 +10,8 @@ import {
   reauthenticateWithCredential,
   EmailAuthProvider
 } from 'firebase/auth';
-import { auth, googleProvider } from '../firebase';
+import { auth, googleProvider, db } from '../firebase';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 
 const AuthContext = createContext({});
 
@@ -20,19 +21,63 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const signup = (email, password, username) => {
-    return createUserWithEmailAndPassword(auth, email, password).then((result) => {
-      // Store username in user profile if needed
+  const signup = async (email, password, username) => {
+    try {
+      const result = await createUserWithEmailAndPassword(auth, email, password);
+      const user = result.user;
+
+      // Update auth profile
+      if (username) {
+        await updateProfile(user, { displayName: username });
+      }
+
+      // Create user document in Firestore
+      await setDoc(doc(db, 'users', user.uid), {
+        uid: user.uid,
+        email: user.email,
+        displayName: username || user.email.split('@')[0],
+        photoURL: user.photoURL || '',
+        role: 'user',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+
       return result;
-    });
+    } catch (error) {
+      throw error;
+    }
   };
 
   const login = (email, password) => {
     return signInWithEmailAndPassword(auth, email, password);
   };
 
-  const loginWithGoogle = () => {
-    return signInWithPopup(auth, googleProvider);
+  const loginWithGoogle = async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+
+      // Check if user document exists
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (!userDoc.exists()) {
+        // Create new user document
+        await setDoc(userDocRef, {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName || user.email.split('@')[0],
+          photoURL: user.photoURL || '',
+          role: 'user',
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+      }
+
+      return result;
+    } catch (error) {
+      throw error;
+    }
   };
 
   const logout = () => {
@@ -69,9 +114,9 @@ export const AuthProvider = ({ children }) => {
       auth.currentUser.email,
       currentPassword
     );
-    
+
     await reauthenticateWithCredential(auth.currentUser, credential);
-    
+
     // Update password
     return updatePassword(auth.currentUser, newPassword);
   };
